@@ -122,6 +122,41 @@ python run_experiments.py ... --conditions mambacore --skip-completed
 python run_experiments.py ... --backbone t
 ```
 
+### Prepare enhancement once, then reuse it
+
+Enhancement is deterministic inference and does not need to run again for each
+segmentation experiment. Generate both conditions once:
+
+```bash
+python run_experiments.py \
+  --data-root /kaggle/input/YOUR-SUIM-PATH/SUIM \
+  --uwir-repo /kaggle/working/underwater-image-enhancement \
+  --mambacore-checkpoint /kaggle/input/YOUR-WEIGHTS/mambacore_best_model.pth \
+  --unet-checkpoint /kaggle/input/YOUR-WEIGHTS/unet_best_model.pth \
+  --output-dir /kaggle/working/suim_precomputed \
+  --prepare-only
+
+%cd /kaggle/working/suim_precomputed
+!zip -qr /kaggle/working/suim-enhanced.zip enhanced split_manifest.json
+```
+
+Save the notebook output or upload `suim-enhanced.zip` as a private Kaggle
+Dataset. After attaching and extracting it in a future notebook, no UWIR clone
+or restoration checkpoints are needed:
+
+```bash
+python run_experiments.py \
+  --data-root /kaggle/input/YOUR-SUIM-PATH/SUIM \
+  --mambacore-images /kaggle/input/YOUR-ENHANCED-DATA/enhanced/mambacore \
+  --unet-images /kaggle/input/YOUR-ENHANCED-DATA/enhanced/unet \
+  --output-dir /kaggle/working/suim_three_way \
+  --epochs 20 --batch-size 4 --workers 2
+```
+
+The precomputed roots are validated against every train, validation, and test
+image key before training starts. Only restored images are stored; the original
+SUIM masks remain the single source of labels for all conditions.
+
 Mixed precision is off by default because native selective scans are easier to
 validate in FP32. `--amp` is available if the selected GPU/model combination is
 numerically stable.

@@ -42,6 +42,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--mambacore-checkpoint", type=Path)
     parser.add_argument("--unet-checkpoint", type=Path)
+    parser.add_argument(
+        "--mambacore-images",
+        type=Path,
+        help="Precomputed MambaCore image root; bypasses UWIR model loading",
+    )
+    parser.add_argument(
+        "--unet-images",
+        type=Path,
+        help="Precomputed U-Net image root; bypasses UWIR model loading",
+    )
     parser.add_argument("--output-dir", type=Path, default=Path("outputs/suim_three_way"))
     parser.add_argument("--conditions", nargs="+", choices=CONDITIONS, default=list(CONDITIONS))
     parser.add_argument("--backbone", choices=("small", "t"), default="small")
@@ -111,6 +121,21 @@ def prepare_enhancements(args, splits, device):
     for condition in args.conditions:
         if condition == "raw":
             roots[condition] = None
+            continue
+        precomputed = getattr(args, f"{condition}_images")
+        if precomputed is not None:
+            if not precomputed.is_dir():
+                raise FileNotFoundError(
+                    f"precomputed {condition} image root does not exist: {precomputed}"
+                )
+            missing = [sample.key for sample in all_samples if not (precomputed / sample.key).is_file()]
+            if missing:
+                raise FileNotFoundError(
+                    f"precomputed {condition} data is missing {len(missing)} images; "
+                    f"first missing key: {missing[0]}"
+                )
+            print(f"Using precomputed {condition} images from {precomputed}")
+            roots[condition] = precomputed
             continue
         checkpoint = getattr(args, f"{condition}_checkpoint")
         if checkpoint is None:
