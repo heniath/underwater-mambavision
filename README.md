@@ -7,6 +7,10 @@ on [SUIM](https://irvlab.cs.umn.edu/resources/suim-dataset):
 2. `mambacore`: images restored by UWIR's `hybridmamba_core_3ch` checkpoint.
 3. `unet`: images restored by UWIR's `unet_3ch` checkpoint.
 
+For the complete architecture mapping, runtime call graph, file-by-file
+purpose, and explanation of which components come from MambaVision versus this
+experiment, read [the codebase guide](docs/CODEBASE_GUIDE.md).
+
 All three conditions use the same MambaVision-FPN segmentation architecture,
 SUIM masks, train/validation/test membership, initial weights, random seed,
 data ordering, augmentation, optimizer, and schedule. Only the input image
@@ -268,7 +272,7 @@ config = MambaVisionConfig(
     depths=(1, 1, 2, 2),
     num_heads=(1, 2, 4, 6),
     window_sizes=(4, 4, 4, 2),
-state_size=4,
+    state_size=4,
     drop_path_rate=0.1,
 )
 model = MambaVision(config)
@@ -276,7 +280,7 @@ model = MambaVision(config)
 
 ## Tests
 
-Install the two dependencies and run:
+Install the dependencies and run:
 
 ```bash
 python -m pip install -r requirements.txt
@@ -290,6 +294,7 @@ placement, and validate the MambaVision-T stage dimensions.
 ## Scope
 
 This project does not include ImageNet training recipes, pretrained weights,
-detection or segmentation heads, optimized parallel scans, or benchmark
-reproduction. The original scalar SSM learning examples under `src/ssm` remain
-independent from the vision model.
+detection or instance-segmentation heads, optimized parallel scans, or
+benchmark reproduction. It does include the project-specific semantic FPN
+described above. The original scalar SSM learning examples under `src/ssm`
+remain independent from the vision model.
